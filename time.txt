@@ -1,0 +1,48 @@
+
+80
+User: 2061.17, System: 260.14, Real: 164.12
+
+90
+User: 2041.01, System: 260.79, Real: 163.19
+
+100
+User: 2037.78, System: 256.29, Real: 162.37
+
+110
+User: 2051.02, System: 260.52, Real: 163.87
+
+120
+User: 2102.92, System: 268.21, Real: 167.03
+
+130
+User: 2108.71, System: 266.10, Real: 167.59
+
+140
+User: 2106.08, System: 267.81, Real: 167.39
+
+150
+User: 2106.46, System: 267.16, Real: 167.75
+
+80
+User: 2041.21, System: 255.73, Real: 162.82
+
+90
+User: 2091.81, System: 265.33, Real: 166.39
+
+100
+User: 2111.48, System: 268.08, Real: 167.84
+
+110
+User: 2108.23, System: 266.20, Real: 167.31
+
+120
+User: 2106.61, System: 268.00, Real: 167.41
+
+130
+User: 2107.90, System: 267.18, Real: 167.55
+
+140
+User: 2113.05, System: 267.67, Real: 168.11
+
+150
+User: 2114.37, System: 267.07, Real: 168.42
