@@ -91,11 +91,10 @@ public final class PrecompiledHeader {
         try (Stream<String> lines = Files.lines(precompiledHpp)) {
             String precompiledHppHeader = lines
                     .takeWhile(Predicate.not(s -> INCLUDE_PATTERN.matcher(s).matches()))
-                    .map(s -> s.isEmpty() ? System.lineSeparator() : s)
                     .collect(Collectors.joining(System.lineSeparator()));
             Files.write(precompiledHpp, precompiledHppHeader.getBytes());
         }
-        Files.write(precompiledHpp, (includes + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
+        Files.write(precompiledHpp, (System.lineSeparator() + includes + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
     }
 
 }
