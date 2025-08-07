@@ -64,10 +64,12 @@ public final class PrecompiledHeader {
                 .filter(s -> s.endsWith(".inline.hpp"))
                 .toList();
         if (INCLUDE_INLINE_HEADERS) {
-            // Remove duplicates, if present
-            inlineIncludes.stream()
-                    .map(s -> s.replace(".inline.hpp", ".hpp"))
-                    .forEach(occurrences::remove);
+            // Remove duplicates, if present. Merge the value with the inline value
+            for (String inlineInclude : inlineIncludes) {
+                String noInlineInclude = inlineInclude.replace(".inline.hpp", ".hpp");
+                int noInlineCount = Objects.requireNonNullElse(occurrences.get(noInlineInclude), 0);
+                occurrences.put(inlineInclude, occurrences.get(inlineInclude) + noInlineCount);
+            }
         } else {
             // Replace .inline.hpp include with the non-inline header, if it exists
             for (String include : inlineIncludes) {
