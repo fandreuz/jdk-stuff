@@ -66,9 +66,9 @@ public final class PrecompiledHeaders {
             throw new IllegalArgumentException("jdk_root is not a directory: " + jdkRoot);
         }
 
-        Path objsPath = jdkRoot.resolve(OBJS_PATH);
+        Path objsPath = buildRoot.resolve(OBJS_PATH);
         if (!Files.isDirectory(objsPath)) {
-            throw new IllegalArgumentException("Invalid hotspot directory: " + objsPath);
+            throw new IllegalArgumentException("Could not find 'objs' directory: " + objsPath);
         }
 
         // Count inclusion times for each header
