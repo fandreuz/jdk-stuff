@@ -45,7 +45,7 @@ public final class PrecompiledHeaders {
     private static final String OBJS_PATH = "hotspot/variant-server/libjvm/objs";
     private static final String PRECOMPILED_HPP = "src/hotspot/share/precompiled/precompiled.hpp";
     private static final String INLINE_HPP_SUFFIX = ".inline.hpp";
-    private static final String HOTSPOT_SOURCE_PREFIX = "/jdk/src/hotspot/";
+    private static final String HOTSPOT_SOURCE_PREFIX = "/jdk/src/hotspot/share/";
 
     private PrecompiledHeaders() {
         throw new UnsupportedOperationException("Instances not allowed");
