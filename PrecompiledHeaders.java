@@ -91,6 +91,9 @@ public final class PrecompiledHeaders {
                     .filter(Matcher::matches)
                     .map(matcher -> matcher.group(1))
                     .filter(dependency -> dependency.startsWith(HOTSPOT_SOURCE_PREFIX))
+                    // Avoid compiler specific headers
+                    .filter(Predicate.not(dependency -> dependency.endsWith("_gcc.hpp")))
+                    .filter(Predicate.not(dependency -> dependency.endsWith("_visCPP.hpp")))
                     .map(dependency -> dependency.replace(HOTSPOT_SOURCE_PREFIX, ""))
                     .collect(Collectors.toMap(Function.identity(), s -> 1, Integer::sum));
         }
