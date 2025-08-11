@@ -17,7 +17,7 @@ public final class PrecompiledHeader {
 
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("^#\\s*include \"([^\"]+)\"$");
     private static final boolean INCLUDE_INLINE_HEADERS = true;
-    private static final String HOTSPOT_PATH = "src/hotspot/share";
+    private static final String HOTSPOT_PATH = "src/hotspot";
     private static final String PRECOMPILED_HPP = "src/hotspot/share/precompiled/precompiled.hpp";
 
     private PrecompiledHeader() {
