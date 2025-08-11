@@ -65,6 +65,7 @@ public final class PrecompiledHeaders {
             throw new IllegalArgumentException("Invalid hotspot directory: " + hotspotPath);
         }
 
+        // Count inclusion times for each header
         Map<String, Integer> occurrences = new HashMap<>();
         try (Stream<Path> paths = Files.walk(hotspotPath)) {
             paths.filter(Files::isRegularFile)
@@ -89,6 +90,7 @@ public final class PrecompiledHeaders {
         List<String> inlineIncludes = occurrences.keySet().stream()
                 .filter(s -> s.endsWith(INLINE_HPP_SUFFIX))
                 .toList();
+
         // Each .inline.hpp pulls in the non-inline version too, so we can increase its counter
         for (String inlineInclude : inlineIncludes) {
             int inlineCount = occurrences.get(inlineInclude);
@@ -98,22 +100,19 @@ public final class PrecompiledHeaders {
             occurrences.put(noInlineInclude, inlineCount + noInlineCount);
         }
 
+        // Keep only the headers which are included at least 'minInclusionCount' times
         Set<String> headers = occurrences.entrySet().stream()
                 .filter(entry -> entry.getValue() > minInclusionCount)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
-        // If both inline and non-inline headers should be included, prefer the inline one
+
+        // If both inline and non-inline headers are to be included, prefer the inline header
         for (String inlineInclude : inlineIncludes) {
             if (headers.contains(inlineInclude)) {
                 String noInlineInclude = inlineInclude.replace(INLINE_HPP_SUFFIX, ".hpp");
                 headers.remove(noInlineInclude);
             }
         }
-
-        String includes = headers.stream()
-                .sorted()
-                .map(header -> String.format("#include \"%s\"", header))
-                .collect(Collectors.joining(System.lineSeparator()));
 
         Path precompiledHpp = jdkRoot.resolve(PRECOMPILED_HPP);
         try (Stream<String> lines = Files.lines(precompiledHpp)) {
@@ -122,8 +121,13 @@ public final class PrecompiledHeaders {
                     .collect(Collectors.joining(System.lineSeparator()));
             Files.write(precompiledHpp, precompiledHppHeader.getBytes());
         }
+
+        String headerLines = headers.stream()
+                .sorted()
+                .map(header -> String.format("#include \"%s\"", header))
+                .collect(Collectors.joining(System.lineSeparator()));
         Files.write(precompiledHpp,
-                (System.lineSeparator() + includes + System.lineSeparator()).getBytes(),
+                (System.lineSeparator() + headerLines + System.lineSeparator()).getBytes(),
                 StandardOpenOption.APPEND);
     }
 
