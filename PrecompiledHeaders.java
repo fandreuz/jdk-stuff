@@ -27,11 +27,10 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,9 +72,9 @@ public final class PrecompiledHeaders {
         }
 
         // Count inclusion times for each header
-        Map<String, Integer> occurrences = new HashMap<>();
+        Map<String, Integer> occurrences;
         try (Stream<Path> files = Files.list(objsPath)) {
-            files.filter(file -> file.getFileName().toString().endsWith(".d"))
+            occurrences = files.filter(file -> file.getFileName().toString().endsWith(".d"))
                     .flatMap(file -> {
                         try {
                             return Files.lines(file);
@@ -90,7 +89,7 @@ public final class PrecompiledHeaders {
                     .map(matcher -> matcher.group(1))
                     .filter(dependency -> dependency.startsWith(HOTSPOT_SOURCE_PREFIX))
                     .map(dependency -> dependency.replace(HOTSPOT_SOURCE_PREFIX, ""))
-                    .forEach(dependency -> occurrences.compute(dependency, (k, old) -> Objects.requireNonNullElse(old, 0) + 1));
+                    .collect(Collectors.toMap(Function.identity(), s -> 1, Integer::sum));
         }
 
         // Keep only the headers which are included at least 'minInclusionCount' times
