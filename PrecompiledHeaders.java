@@ -94,7 +94,7 @@ public final class PrecompiledHeaders {
 
         // Keep only the headers which are included at least 'minInclusionCount' times
         Set<String> headers = occurrences.entrySet().stream()
-                .filter(entry -> entry.getValue() > minInclusionCount)
+                .filter(entry -> entry.getValue() >= minInclusionCount)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
 
