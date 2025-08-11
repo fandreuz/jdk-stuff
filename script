@@ -27,7 +27,6 @@ compile() {
 set -euox
 
 rm -f output
-git checkout baseline
 
 while IFS= read -r line; do
     echo "------------" >> output
