@@ -16,9 +16,9 @@ import java.util.stream.Stream;
 public final class PrecompiledHeader {
 
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("^#\\s*include \"([^\"]+)\"$");
-    private static final boolean INCLUDE_INLINE_HEADERS = true;
     private static final String HOTSPOT_PATH = "src/hotspot";
     private static final String PRECOMPILED_HPP = "src/hotspot/share/precompiled/precompiled.hpp";
+    private static final String INLINE_HPP_SUFFIX = ".inline.hpp";
 
     private PrecompiledHeader() {
         throw new UnsupportedOperationException("Instances not allowed");
@@ -61,24 +61,15 @@ public final class PrecompiledHeader {
         }
 
         List<String> inlineIncludes = occurrences.keySet().stream()
-                .filter(s -> s.endsWith(".inline.hpp"))
+                .filter(s -> s.endsWith(INLINE_HPP_SUFFIX))
                 .toList();
-        if (INCLUDE_INLINE_HEADERS) {
-            // Remove duplicates, if present. Merge the value with the inline value
-            for (String inlineInclude : inlineIncludes) {
-                String noInlineInclude = inlineInclude.replace(".inline.hpp", ".hpp");
-                int noInlineCount = Objects.requireNonNullElse(occurrences.remove(noInlineInclude), 0);
-                occurrences.put(inlineInclude, occurrences.get(inlineInclude) + noInlineCount);
-            }
-        } else {
-            // Replace .inline.hpp include with the non-inline header, if it exists
-            for (String include : inlineIncludes) {
-                int inlineIncludeCount = occurrences.remove(include);
-                String noInlineInclude = include.replace(".inline.hpp", ".hpp");
-                if (!Files.exists(hotspotPath.resolve(noInlineInclude))) {
-                    continue;
-                }
-                occurrences.compute(noInlineInclude, (k, c) -> inlineIncludeCount + Objects.requireNonNullElse(c, 0));
+        // Merge inline and non-inline headers. Prefer inline headers in precompiled.hpp,
+        // as it seems they improve compilation time
+        for (String inlineInclude : inlineIncludes) {
+            String noInlineInclude = inlineInclude.replace(INLINE_HPP_SUFFIX, ".hpp");
+            if (occurrences.containsKey(noInlineInclude)) {
+                int newCount = occurrences.get(inlineInclude) + occurrences.get(noInlineInclude);
+                occurrences.put(inlineInclude, newCount);
             }
         }
 
