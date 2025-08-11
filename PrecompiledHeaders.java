@@ -27,6 +27,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +40,7 @@ import java.util.stream.Stream;
 
 public final class PrecompiledHeaders {
 
-    private static final Pattern DEPENDENCY_LINE_PATTERN = Pattern.compile("\\s*(\\S+)\\s*\\\\?");
+    private static final Pattern DEPENDENCY_LINE_PATTERN = Pattern.compile("\\s*(\\S+.hpp)\\s*\\\\?");
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("^#\\s*include \"([^\"]+)\"$");
     private static final String OBJS_PATH = "hotspot/variant-server/libjvm/objs";
     private static final String PRECOMPILED_HPP = "src/hotspot/share/precompiled/precompiled.hpp";
@@ -76,6 +77,7 @@ public final class PrecompiledHeaders {
         try (Stream<Path> files = Files.list(objsPath)) {
             occurrences = files
                     .filter(file -> file.getFileName().toString().endsWith(".d"))
+                    .filter(Predicate.not(file -> file.getFileName().toString().startsWith("BUILD_LIBJVM")))
                     .flatMap(file -> {
                         try {
                             return Files.lines(file);
