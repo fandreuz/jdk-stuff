@@ -40,7 +40,7 @@ import java.util.stream.Stream;
 
 public final class PrecompiledHeaders {
 
-    private static final Pattern DEPENDENCY_LINE_PATTERN = Pattern.compile("\\s*(\\S+)\\s*\\?");
+    private static final Pattern DEPENDENCY_LINE_PATTERN = Pattern.compile("\\s*(\\S+)\\s*\\\\?");
     private static final String OBJS_PATH = "hotspot/variant-server/libjvm/objs";
     private static final String PRECOMPILED_HPP = "src/hotspot/share/precompiled/precompiled.hpp";
     private static final String INLINE_HPP_SUFFIX = ".inline.hpp";
