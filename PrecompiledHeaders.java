@@ -1,23 +1,51 @@
+
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class PrecompiledHeader {
+public final class PrecompiledHeaders {
 
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("^#\\s*include \"([^\"]+)\"$");
     private static final String HOTSPOT_PATH = "src/hotspot";
     private static final String PRECOMPILED_HPP = "src/hotspot/share/precompiled/precompiled.hpp";
     private static final String INLINE_HPP_SUFFIX = ".inline.hpp";
 
-    private PrecompiledHeader() {
+    private PrecompiledHeaders() {
         throw new UnsupportedOperationException("Instances not allowed");
     }
 
@@ -54,18 +82,19 @@ public final class PrecompiledHeader {
                     .map(INCLUDE_PATTERN::matcher)
                     .filter(Matcher::matches)
                     .map(matcher -> matcher.group(1))
-                    .forEach(include -> occurrences.compute(include, (k, old) -> Objects.requireNonNullElse(old, 0) + 1));
+                    .forEach(include -> occurrences.compute(include,
+                            (k, old) -> Objects.requireNonNullElse(old, 0) + 1));
         }
 
         List<String> inlineIncludes = occurrences.keySet().stream()
                 .filter(s -> s.endsWith(INLINE_HPP_SUFFIX))
                 .toList();
-        // Each .inline.hpp implicitly pulls in the non-inline version too, so we can increase
-        // its counter
+        // Each .inline.hpp pulls in the non-inline version too, so we can increase its counter
         for (String inlineInclude : inlineIncludes) {
             int inlineCount = occurrences.get(inlineInclude);
             String noInlineInclude = inlineInclude.replace(INLINE_HPP_SUFFIX, ".hpp");
-            int noInlineCount = Objects.requireNonNullElse(occurrences.get(noInlineInclude), 0);
+            int noInlineCount = Objects.requireNonNullElse(
+                    occurrences.get(noInlineInclude), 0);
             occurrences.put(noInlineInclude, inlineCount + noInlineCount);
         }
 
@@ -93,7 +122,9 @@ public final class PrecompiledHeader {
                     .collect(Collectors.joining(System.lineSeparator()));
             Files.write(precompiledHpp, precompiledHppHeader.getBytes());
         }
-        Files.write(precompiledHpp, (System.lineSeparator() + includes + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
+        Files.write(precompiledHpp,
+                (System.lineSeparator() + includes + System.lineSeparator()).getBytes(),
+                StandardOpenOption.APPEND);
     }
 
 }
