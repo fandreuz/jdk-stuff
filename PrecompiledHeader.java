@@ -67,7 +67,7 @@ public final class PrecompiledHeader {
             // Remove duplicates, if present. Merge the value with the inline value
             for (String inlineInclude : inlineIncludes) {
                 String noInlineInclude = inlineInclude.replace(".inline.hpp", ".hpp");
-                int noInlineCount = Objects.requireNonNullElse(occurrences.get(noInlineInclude), 0);
+                int noInlineCount = Objects.requireNonNullElse(occurrences.remove(noInlineInclude), 0);
                 occurrences.put(inlineInclude, occurrences.get(inlineInclude) + noInlineCount);
             }
         } else {
