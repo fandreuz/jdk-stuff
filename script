@@ -1,0 +1,42 @@
+set -euox
+
+rm -f output
+
+git stash
+git checkout baseline
+
+while IFS= read -r line; do
+
+echo "------------" >> output
+echo "$line" >> output
+
+if [[ "$line" == //* ]]; then
+continue
+fi
+
+git stash
+rm -rf build/feature
+
+FEATURES=""
+for feature in $line; do
+if [[ "$feature" == *gc ]]; then
+    has_gc=true
+fi
+FEATURES+=" --enable-jvm-feature-$feature"
+done
+
+sh configure --with-build-user=fandreuz \
+             --with-conf-name=feature \
+             --with-toolchain-type=clang \
+             --with-jvm-variants=custom \
+             $FEATURES
+
+echo "before precompiled" >> output
+/usr/bin/time --append --output output -f "system=%S user=%U real=%e" make -j hotspot CONF_NAME=feature
+
+java -cp src/utils/PrecompiledHeaders PrecompiledHeaders 400 build/feature
+
+echo "after precompiled" >> output
+/usr/bin/time --append --output output -f "system=%S user=%U real=%e" make -j hotspot CONF_NAME=feature
+
+done < features
