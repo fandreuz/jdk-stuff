@@ -26,6 +26,7 @@ public final class PrecompiledHeader {
     public static void main(String[] args) throws IOException {
         if (args.length == 0 || args.length > 2) {
             System.err.println("Usage: min_inclusion_count [jdk_root=.]");
+            System.exit(1);
         }
 
         int minInclusionCount = Integer.parseInt(args[0]);
