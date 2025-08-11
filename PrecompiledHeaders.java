@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 public final class PrecompiledHeaders {
 
     private static final Pattern DEPENDENCY_LINE_PATTERN = Pattern.compile("\\s*(\\S+)\\s*\\\\?");
+    private static final Pattern INCLUDE_PATTERN = Pattern.compile("^#\\s*include \"([^\"]+)\"$");
     private static final String OBJS_PATH = "hotspot/variant-server/libjvm/objs";
     private static final String PRECOMPILED_HPP = "src/hotspot/share/precompiled/precompiled.hpp";
     private static final String INLINE_HPP_SUFFIX = ".inline.hpp";
@@ -112,7 +113,7 @@ public final class PrecompiledHeaders {
         Path precompiledHpp = jdkRoot.resolve(PRECOMPILED_HPP);
         try (Stream<String> lines = Files.lines(precompiledHpp)) {
             String precompiledHppHeader = lines
-                    .takeWhile(Predicate.not(s -> DEPENDENCY_LINE_PATTERN.matcher(s).matches()))
+                    .takeWhile(Predicate.not(s -> INCLUDE_PATTERN.matcher(s).matches()))
                     .collect(Collectors.joining(System.lineSeparator()));
             Files.write(precompiledHpp, precompiledHppHeader.getBytes());
         }
