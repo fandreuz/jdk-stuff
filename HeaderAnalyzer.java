@@ -1,65 +1,95 @@
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-public class HeaderAnalyzer {
+public final class HeaderAnalyzer {
 
     private static final Pattern INCLUDE_PATTERN = Pattern.compile("^#\\s*include \"([^\"]+)\"$");
-    private static final PathMatcher PATH_MATCHER = FileSystems.getDefault().getPathMatcher("glob:*.{cpp,hpp}");
-    private static final boolean INCLUDE_INLINE = true;
+    private static final boolean INCLUDE_INLINE_HEADERS = true;
+    private static final String HOTSPOT_PATH = "src/hotspot/share";
+    private static final String PRECOMPILED_HPP = "src/hotspot/share/precompiled/precompiled.hpp";
+
+    private HeaderAnalyzer() {
+        throw new UnsupportedOperationException("Instances not allowed");
+    }
 
     public static void main(String[] args) throws IOException {
-        Path directory = Path.of(args[0]);
-        if (!Files.isDirectory(directory)) {
-            throw new IllegalArgumentException("Not a directory");
+        if (args.length == 0 || args.length > 2) {
+            System.err.println("Usage: min_inclusion_count [jdk_root=.]");
         }
-        Path target = Path.of(args[1]);
-        int minInclusion = Integer.parseInt(args[2]);
+
+        int minInclusionCount = Integer.parseInt(args[0]);
+        Path jdkRoot = Path.of(args.length == 2 ? args[1] : ".").toAbsolutePath();
+        if (!Files.isDirectory(jdkRoot)) {
+            throw new IllegalArgumentException("jdk_root is not a directory: " + jdkRoot);
+        }
+        Path hotspotPath = jdkRoot.resolve(HOTSPOT_PATH);
+        if (!Files.isDirectory(hotspotPath)) {
+            throw new IllegalArgumentException("Invalid hotspot directory: " + hotspotPath);
+        }
 
         Map<String, Integer> occurrences = new HashMap<>();
-        Files.walkFileTree(directory, new SimpleFileVisitor<>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                if (!PATH_MATCHER.matches(file.getFileName())) return FileVisitResult.CONTINUE;
+        Files.walk(hotspotPath)
+                .filter(Files::isRegularFile)
+                .filter(path -> {
+                    String name = path.getFileName().toString();
+                    return name.endsWith(".cpp") || !name.endsWith(".hpp");
+                })
+                .flatMap(path -> {
+                    try {
+                        return Files.lines(path);
+                    } catch (IOException exception) {
+                        throw new UncheckedIOException(exception);
+                    }
+                })
+                .map(INCLUDE_PATTERN::matcher)
+                .filter(Matcher::matches)
+                .map(matcher -> matcher.group(1))
+                .forEach(include -> occurrences.compute(include, (k, old) -> Objects.requireNonNullElse(old, 0) + 1));
 
-                for (String line : Files.readAllLines(file)) {
-                    Matcher matcher = INCLUDE_PATTERN.matcher(line);
-                    if (!matcher.find()) continue;
-
-                    String header = matcher.group(1);
-                    occurrences.compute(header, (k, old) -> old == null ? 1 : old + 1);
-                }
-                return FileVisitResult.CONTINUE;
-            }
-        });
-
-        if (!INCLUDE_INLINE) {
-            List<String> inlineIncludes = occurrences.keySet().stream()
-                    .filter(s -> s.endsWith(".inline.hpp"))
-                    .toList();
+        List<String> inlineIncludes = occurrences.keySet().stream()
+                .filter(s -> s.endsWith(".inline.hpp"))
+                .toList();
+        if (INCLUDE_INLINE_HEADERS) {
+            // Remove duplicates, if present
+            inlineIncludes.stream()
+                    .map(s -> s.replace(".inline.hpp", ".hpp"))
+                    .forEach(occurrences::remove);
+        } else {
+            // Replace .inline.hpp include with the non-inline header, if it exists
             for (String include : inlineIncludes) {
-                int count = occurrences.remove(include);
+                int inlineIncludeCount = occurrences.remove(include);
                 String noInlineInclude = include.replace(".inline.hpp", ".hpp");
-                if (!Files.exists(directory.resolve(noInlineInclude))) {
+                if (!Files.exists(hotspotPath.resolve(noInlineInclude))) {
                     continue;
                 }
-                occurrences.compute(noInlineInclude, (k, c) -> count + Objects.requireNonNullElse(c, 0));
+                occurrences.compute(noInlineInclude, (k, c) -> inlineIncludeCount + Objects.requireNonNullElse(c, 0));
             }
         }
 
-        List<String> lines = occurrences.entrySet().stream()
-                .filter(entry -> entry.getValue() > minInclusion)
+        String includes = occurrences.entrySet().stream()
+                .filter(entry -> entry.getValue() > minInclusionCount)
                 .map(Map.Entry::getKey)
                 .sorted()
                 .map(header -> String.format("#include \"%s\"", header))
-                .toList();
-        Files.write(target, lines);
+                .collect(Collectors.joining("\n"));
+
+        Path precompiledHpp = jdkRoot.resolve(PRECOMPILED_HPP);
+        String precompiledHppHeader = Files.lines(precompiledHpp)
+                .takeWhile(Predicate.not(s -> INCLUDE_PATTERN.matcher(s).matches()))
+                .collect(Collectors.joining("\n"));
+        Files.write(precompiledHpp, precompiledHppHeader.getBytes());
+        Files.write(precompiledHpp, (includes + "\n").getBytes(), StandardOpenOption.APPEND);
     }
 
 }
