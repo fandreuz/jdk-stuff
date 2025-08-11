@@ -85,16 +85,16 @@ public final class PrecompiledHeader {
                 .map(Map.Entry::getKey)
                 .sorted()
                 .map(header -> String.format("#include \"%s\"", header))
-                .collect(Collectors.joining("\n"));
+                .collect(Collectors.joining(System.lineSeparator()));
 
         Path precompiledHpp = jdkRoot.resolve(PRECOMPILED_HPP);
         try (Stream<String> lines = Files.lines(precompiledHpp)) {
             String precompiledHppHeader = lines
                     .takeWhile(Predicate.not(s -> INCLUDE_PATTERN.matcher(s).matches()))
-                    .collect(Collectors.joining("\n"));
+                    .collect(Collectors.joining(System.lineSeparator()));
             Files.write(precompiledHpp, precompiledHppHeader.getBytes());
         }
-        Files.write(precompiledHpp, ("\n" + includes + "\n").getBytes(), StandardOpenOption.APPEND);
+        Files.write(precompiledHpp, (includes + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
     }
 
 }
