@@ -45,7 +45,7 @@ public final class PrecompiledHeader {
             paths.filter(Files::isRegularFile)
                     .filter(path -> {
                         String name = path.getFileName().toString();
-                        return name.endsWith(".cpp") || !name.endsWith(".hpp");
+                        return name.endsWith(".cpp") || name.endsWith(".hpp");
                     })
                     .flatMap(path -> {
                         try {
