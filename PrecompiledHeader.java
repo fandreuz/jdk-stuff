@@ -3,10 +3,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,19 +60,28 @@ public final class PrecompiledHeader {
         List<String> inlineIncludes = occurrences.keySet().stream()
                 .filter(s -> s.endsWith(INLINE_HPP_SUFFIX))
                 .toList();
-        // Merge inline and non-inline headers. Prefer inline headers in precompiled.hpp,
-        // as it seems they improve compilation time
+        // Each .inline.hpp implicitly pulls in the non-inline version too, so we can increase
+        // its counter
         for (String inlineInclude : inlineIncludes) {
+            int inlineCount = occurrences.get(inlineInclude);
             String noInlineInclude = inlineInclude.replace(INLINE_HPP_SUFFIX, ".hpp");
-            if (occurrences.containsKey(noInlineInclude)) {
-                int newCount = occurrences.get(inlineInclude) + occurrences.get(noInlineInclude);
-                occurrences.put(inlineInclude, newCount);
+            int noInlineCount = Objects.requireNonNullElse(occurrences.get(noInlineInclude), 0);
+            occurrences.put(noInlineInclude, inlineCount + noInlineCount);
+        }
+
+        Set<String> headers = occurrences.entrySet().stream()
+                .filter(entry -> entry.getValue() > minInclusionCount)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+        // If both inline and non-inline headers should be included, prefer the inline one
+        for (String inlineInclude : inlineIncludes) {
+            if (headers.contains(inlineInclude)) {
+                String noInlineInclude = inlineInclude.replace(INLINE_HPP_SUFFIX, ".hpp");
+                headers.remove(noInlineInclude);
             }
         }
 
-        String includes = occurrences.entrySet().stream()
-                .filter(entry -> entry.getValue() > minInclusionCount)
-                .map(Map.Entry::getKey)
+        String includes = headers.stream()
                 .sorted()
                 .map(header -> String.format("#include \"%s\"", header))
                 .collect(Collectors.joining(System.lineSeparator()));
