@@ -11,6 +11,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class PrecompiledHeader {
 
@@ -40,23 +41,24 @@ public final class PrecompiledHeader {
         }
 
         Map<String, Integer> occurrences = new HashMap<>();
-        Files.walk(hotspotPath)
-                .filter(Files::isRegularFile)
-                .filter(path -> {
-                    String name = path.getFileName().toString();
-                    return name.endsWith(".cpp") || !name.endsWith(".hpp");
-                })
-                .flatMap(path -> {
-                    try {
-                        return Files.lines(path);
-                    } catch (IOException exception) {
-                        throw new UncheckedIOException(exception);
-                    }
-                })
-                .map(INCLUDE_PATTERN::matcher)
-                .filter(Matcher::matches)
-                .map(matcher -> matcher.group(1))
-                .forEach(include -> occurrences.compute(include, (k, old) -> Objects.requireNonNullElse(old, 0) + 1));
+        try (Stream<Path> paths = Files.walk(hotspotPath)) {
+            paths.filter(Files::isRegularFile)
+                    .filter(path -> {
+                        String name = path.getFileName().toString();
+                        return name.endsWith(".cpp") || !name.endsWith(".hpp");
+                    })
+                    .flatMap(path -> {
+                        try {
+                            return Files.lines(path);
+                        } catch (IOException exception) {
+                            throw new UncheckedIOException(exception);
+                        }
+                    })
+                    .map(INCLUDE_PATTERN::matcher)
+                    .filter(Matcher::matches)
+                    .map(matcher -> matcher.group(1))
+                    .forEach(include -> occurrences.compute(include, (k, old) -> Objects.requireNonNullElse(old, 0) + 1));
+        }
 
         List<String> inlineIncludes = occurrences.keySet().stream()
                 .filter(s -> s.endsWith(".inline.hpp"))
@@ -86,11 +88,13 @@ public final class PrecompiledHeader {
                 .collect(Collectors.joining("\n"));
 
         Path precompiledHpp = jdkRoot.resolve(PRECOMPILED_HPP);
-        String precompiledHppHeader = Files.lines(precompiledHpp)
-                .takeWhile(Predicate.not(s -> INCLUDE_PATTERN.matcher(s).matches()))
-                .collect(Collectors.joining("\n"));
-        Files.write(precompiledHpp, precompiledHppHeader.getBytes());
-        Files.write(precompiledHpp, (includes + "\n").getBytes(), StandardOpenOption.APPEND);
+        try (Stream<String> lines = Files.lines(precompiledHpp)) {
+            String precompiledHppHeader = lines
+                    .takeWhile(Predicate.not(s -> INCLUDE_PATTERN.matcher(s).matches()))
+                    .collect(Collectors.joining("\n"));
+            Files.write(precompiledHpp, precompiledHppHeader.getBytes());
+        }
+        Files.write(precompiledHpp, ("\n" + includes + "\n").getBytes(), StandardOpenOption.APPEND);
     }
 
 }
