@@ -64,9 +64,9 @@ RUN cd /opt \
 
 ENV PATH="/opt/jtreg-install/bin:$PATH"
 
-RUN git clone --depth 1 --branch clang_20 https://github.com/include-what-you-use/include-what-you-use.git && \
-    cd include-what-you-use && \
-    mkdir build && cd build && \
-    cmake -G "Unix Makefiles" -DCMAKE_PREFIX_PATH=/usr/lib/llvm-14 .. && \
-    make -j
+RUN git clone --depth 1 --branch clang_20 https://github.com/include-what-you-use/include-what-you-use.git \
+    && cd include-what-you-use \
+    && mkdir build && cd build \
+    && cmake -G "Unix Makefiles" -DCMAKE_PREFIX_PATH=/usr/lib/llvm-14 .. \
+    && make -j
 ENV PATH="/include-what-you-use/build/bin:$PATH"
