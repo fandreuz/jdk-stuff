@@ -20,14 +20,14 @@ benchmark_step() {
     done
 }
 
-CC=clang-20 CXX=clang++-20 sh configure --with-build-user=fandreuz \
-                                        --with-toolchain-type=clang \
-                                        --with-conf-name=clang-prod
+sh configure --with-build-user=fandreuz \
+             --with-toolchain-type=clang \
+             --with-conf-name=clang-prod
 
-CC=clang-20 CXX=clang++-20 sh configure --with-build-user=fandreuz \
-                                        --with-toolchain-type=clang \
-                                        --with-conf-name=clang-fd \
-                                        --enable-debug
+sh configure --with-build-user=fandreuz \
+             --with-toolchain-type=clang \
+             --with-conf-name=clang-fd \
+             --enable-debug
 
 sh configure --with-build-user=fandreuz --with-conf-name=gcc-prod
 
