@@ -1,0 +1,59 @@
+PRECOMPILED_HPP="src/hotspot/share/precompiled/precompiled.hpp"
+ANALYZER_CONFIG="ClangBuildAnalyzer.ini"
+
+set_config() {
+cat <<EOF > "$ANALYZER_CONFIG"
+[counts]
+header=100
+headerChain=0
+template=0
+function=0
+fileCodegen=0
+fileParse=0
+
+[misc]
+onlyRootHeaders=true
+EOF
+}
+
+update() {
+./ClangBuildAnalyzer/build/ClangBuildAnalyzer --analyze "$1" | \
+    grep " ms: " | \
+    awk -v x=$2 '$1 < x { exit } { print }' | \
+    awk '{print $3}' | \
+    grep hotspot/share | \
+    awk -F "hotspot/share/" '{ printf "#include \"%s\"\n", $2 }' | \
+    sort >> "$PRECOMPILED_HPP"
+}
+
+rm -f "$PRECOMPILED_HPP"
+
+set_config
+update out $1
+cat "$PRECOMPILED_HPP" | sort | uniq | awk '
+{
+  if (prev) {
+    # Check if current line matches prev line with .inline added
+    inlineLine = prev;
+    gsub(/\.hpp"/, ".inline.hpp\"", inlineLine);
+
+    if ($0 == inlineLine) {
+      # Current line is prev with .inline.hpp, so skip printing prev line
+      # Just print current line
+      print $0;
+      prev = "";
+      next;
+    } else { # Current line does not match inline pattern, print prev line
+      print prev;
+      prev = $0;
+      next;
+    }
+  }
+  prev = $0;
+}
+END {
+  if (prev) print prev
+}
+' > "$PRECOMPILED_HPP.tmp"
+mv "$PRECOMPILED_HPP.tmp" "$PRECOMPILED_HPP"
+rm "$ANALYZER_CONFIG"
