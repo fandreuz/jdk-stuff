@@ -13,7 +13,7 @@ benchmark_step() {
     git checkout $1 -- src/hotspot/share/precompiled/precompiled.hpp
 
     for compiler in gcc clang; do
-    for dbg in prod fd; do
+    for dbg in prod fd custom; do
     echo $1 $compiler $dbg >> "$OUTPUT"
     measure $compiler-$dbg
     done
@@ -26,17 +26,30 @@ sh configure --with-build-user=fandreuz \
 
 sh configure --with-build-user=fandreuz \
              --with-toolchain-type=clang \
+             --with-conf-name=clang-custom \
+             --with-jvm-variants=custom \
+             --enable-jvm-feature-epsilongc
+
+sh configure --with-build-user=fandreuz \
+             --with-toolchain-type=clang \
              --with-conf-name=clang-fd \
              --enable-debug
 
-sh configure --with-build-user=fandreuz --with-conf-name=gcc-prod
+sh configure --with-build-user=fandreuz \
+             --with-conf-name=gcc-prod
 
-sh configure --with-build-user=fandreuz --with-conf-name=gcc-fd \
-                                        --enable-debug
+sh configure --with-build-user=fandreuz \
+             --with-conf-name=gcc-fd \
+             --enable-debug
+
+sh configure --with-build-user=fandreuz \
+             --with-conf-name=gcc-custom \
+             --with-jvm-variants=custom \
+             --enable-jvm-feature-epsilongc
 
 rm -f "$OUTPUT"
 git config --global --add safe.directory /jdk
 
 benchmark_step master
 benchmark_step 9e0cb7e8
-benchmark_step fb260abe
+benchmark_step 892ecb5a
