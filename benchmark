@@ -13,7 +13,7 @@ benchmark_step() {
     git checkout $1 -- src/hotspot/share/precompiled/precompiled.hpp
 
     for compiler in gcc clang; do
-    for dbg in prod fd custom; do
+    for dbg in prod fd custom no-pch; do
     echo $1 $compiler $dbg >> "$OUTPUT"
     measure $compiler-$dbg
     done
@@ -23,6 +23,11 @@ benchmark_step() {
 sh configure --with-build-user=fandreuz \
              --with-toolchain-type=clang \
              --with-conf-name=clang-prod
+
+sh configure --with-build-user=fandreuz \
+             --with-toolchain-type=clang \
+             --with-conf-name=clang-no-pch \
+             --disable-precompiled-headers
 
 sh configure --with-build-user=fandreuz \
              --with-toolchain-type=clang \
@@ -37,6 +42,10 @@ sh configure --with-build-user=fandreuz \
 
 sh configure --with-build-user=fandreuz \
              --with-conf-name=gcc-prod
+
+sh configure --with-build-user=fandreuz \
+             --with-conf-name=gcc-no-pch \
+             --disable-precompiled-headers
 
 sh configure --with-build-user=fandreuz \
              --with-conf-name=gcc-fd \
