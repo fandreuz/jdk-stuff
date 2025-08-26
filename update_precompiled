@@ -1,8 +1,26 @@
-PRECOMPILED_HPP="src/hotspot/share/precompiled/precompiled.hpp"
-ANALYZER_CONFIG="ClangBuildAnalyzer.ini"
+#! /bin/bash
 
-set_config() {
-cat <<EOF > "$ANALYZER_CONFIG"
+MIN_MS="$1"
+PRECOMPILED_HPP="src/hotspot/share/precompiled/precompiled.hpp"
+CBA_CONFIG="ClangBuildAnalyzer.ini"
+
+TIMESTAMP="$(date +%Y%m%d)"
+RUN_NAME="pch_update_$TIMESTAMP"
+CBA_OUTPUT="cba_out_$TIMESTAMP"
+
+sh configure --with-toolchain-type=clang \
+             --with-conf-name="$RUN_NAME" \
+             --with-extra-cxxflags="-ftime-trace" \
+             --with-extra-cflags="-ftime-trace"
+make -j hotspot CONF_NAME="$RUN_NAME"
+./ClangBuildAnalyzer/build/ClangBuildAnalyzer \
+  --all "./build/$RUN_NAME/hotspot/variant-server/libjvm/objs" \
+  "$CBA_OUTPUT"
+
+# Preserve comments on top
+cat "$PRECOMPILED_HPP" | awk '/^#include/ {exit} {print}' > "$PRECOMPILED_HPP.tmp"
+
+cat <<EOF > "$CBA_CONFIG"
 [counts]
 header=100
 headerChain=0
@@ -14,46 +32,16 @@ fileParse=0
 [misc]
 onlyRootHeaders=true
 EOF
-}
 
-update() {
-./ClangBuildAnalyzer/build/ClangBuildAnalyzer --analyze "$1" | \
-    grep " ms: " | \
-    awk -v x=$2 '$1 < x { exit } { print }' | \
-    awk '{print $3}' | \
-    grep hotspot/share | \
-    awk -F "hotspot/share/" '{ printf "#include \"%s\"\n", $2 }' | \
-    sort >> "$PRECOMPILED_HPP"
-}
-
-rm -f "$PRECOMPILED_HPP"
-
-set_config
-update out $1
-cat "$PRECOMPILED_HPP" | sort | uniq | awk '
-{
-  if (prev) {
-    # Check if current line matches prev line with .inline added
-    inlineLine = prev;
-    gsub(/\.hpp"/, ".inline.hpp\"", inlineLine);
-
-    if ($0 == inlineLine) {
-      # Current line is prev with .inline.hpp, so skip printing prev line
-      # Just print current line
-      print $0;
-      prev = "";
-      next;
-    } else { # Current line does not match inline pattern, print prev line
-      print prev;
-      prev = $0;
-      next;
-    }
-  }
-  prev = $0;
-}
-END {
-  if (prev) print prev
-}
-' > "$PRECOMPILED_HPP.tmp"
+./ClangBuildAnalyzer/build/ClangBuildAnalyzer --analyze "$CBA_OUTPUT" | \
+  grep " ms: " | \
+  # Keep the headers more expensive than ${1}ms
+  awk -v x="$MIN_MS" '$1 < x { exit } { print }' | \
+  # Extract the header
+  awk '{print $3}' | \
+  # Filter away non-hotspot headers
+  grep hotspot/share | \
+  sort | \
+  awk -F "hotspot/share/" '{ printf "#include \"%s\"\n", $2 }' \
+  >> "$PRECOMPILED_HPP.tmp"
 mv "$PRECOMPILED_HPP.tmp" "$PRECOMPILED_HPP"
-rm "$ANALYZER_CONFIG"
