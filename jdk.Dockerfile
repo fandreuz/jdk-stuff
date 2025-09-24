@@ -58,6 +58,7 @@ ENV JAVA_HOME=$BOOT_JDK_DIR
 ENV PATH="$JAVA_HOME/bin:$PATH"
 
 RUN cd /opt \
+    && git clone -b v1.14.0 https://github.com/google/googletest \
     && git clone https://github.com/openjdk/jtreg.git \
     && cd jtreg \
     && bash make/build.sh --jdk $JAVA_HOME
