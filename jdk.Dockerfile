@@ -24,7 +24,9 @@ RUN apt update && apt install -y --no-install-recommends \
     libx11-dev \
     libxext-dev \
     libxrender-dev \
-    libxrandr-dev libxtst-dev libxt-dev \
+    libxrandr-dev \
+    libxtst-dev \
+    libxt-dev \
     libxtst-dev \
     libxt-dev \
     libcups2-dev \
@@ -40,6 +42,7 @@ RUN apt update && apt install -y --no-install-recommends \
     nano \
     gdb \
     linux-perf \
+    dwarves \
     && apt clean all \
     && rm -rf /var/lib/apt/lists/*
 
