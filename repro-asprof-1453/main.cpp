@@ -1,14 +1,10 @@
+#include <cstdint>
 #include "Main.h"
 #include <jni.h>
-#include <iostream>
 
-void JNICALL hook1(JNIEnv* env, jclass clazz, jboolean abs, jlong tm) {
-    std::cerr << "hook!" << std::endl;
-}
+void JNICALL hook1(JNIEnv* env, jclass clazz, jboolean abs, jlong tm) {}
 
-void JNICALL hook2(JNIEnv* env, jclass clazz, jboolean abs, jlong tm) {
-    std::cerr << "not hook!" << std::endl;
-}
+void JNICALL hook2(JNIEnv* env, jclass clazz, jboolean abs, jlong tm) {}
 
 void doHook(JNIEnv* env, jclass clazz, int i) {
     const JNINativeMethod park = {(char*)"park", (char*)"(ZJ)V", 
