@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := compile
 
-Main.h Main.class:
+Main.h Main.class: Main.java
 	${JAVA_HOME}/bin/javac \
 		--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED \
 		-h . \
