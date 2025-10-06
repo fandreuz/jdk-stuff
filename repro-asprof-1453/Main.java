@@ -8,11 +8,11 @@ public class Main {
 
     public static native void bug();
 
-    public static native void hookUnhook();
+    public static native void callRegisterNatives(int idx);
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < 10000000; ++i) {
-            hookUnhook();
+            callRegisterNatives(i % 2);
             bug();
         }
 	    System.in.read();
