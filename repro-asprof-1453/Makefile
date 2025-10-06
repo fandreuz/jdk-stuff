@@ -13,10 +13,18 @@ run: Main.class libmain.so
 	${JAVA_HOME}/bin/java \
 		--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
 		--add-opens java.base/jdk.internal.misc=ALL-UNNAMED \
-		-XX:ReservedCodeCacheSize=5M \
+		-XX:ReservedCodeCacheSize=10M \
 		-Djava.library.path=. \
 		-Xlog:codecache=info,jni+resolve=error \
 		Main
 
+run-gdb:
+	gdb --command gdb_conf -ex run --args ${JAVA_HOME}/bin/java \
+		--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+		--add-opens java.base/jdk.internal.misc=ALL-UNNAMED \
+		-XX:ReservedCodeCacheSize=10M \
+		-Djava.library.path=. \
+		-Xlog:codecache=info,jni+resolve=error \
+		Main
 clean:
 	rm -f Main.class Main.h libmain.so
