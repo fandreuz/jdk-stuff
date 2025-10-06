@@ -2,7 +2,6 @@
 
 Main.h Main.class: Main.java
 	${JAVA_HOME}/bin/javac \
-		--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED \
 		-h . \
 		Main.java
 
@@ -11,8 +10,6 @@ libmain.so: Main.h main.cpp
 
 run: Main.class libmain.so
 	${JAVA_HOME}/bin/java \
-		--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
-		--add-opens java.base/jdk.internal.misc=ALL-UNNAMED \
 		-XX:ReservedCodeCacheSize=10M \
 		-Djava.library.path=. \
 		-Xlog:codecache=info,jni+resolve=error \
@@ -20,8 +17,6 @@ run: Main.class libmain.so
 
 run-gdb:
 	gdb --command gdb_conf -ex run --args ${JAVA_HOME}/bin/java \
-		--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
-		--add-opens java.base/jdk.internal.misc=ALL-UNNAMED \
 		-XX:ReservedCodeCacheSize=10M \
 		-Djava.library.path=. \
 		-Xlog:codecache=info,jni+resolve=error \
