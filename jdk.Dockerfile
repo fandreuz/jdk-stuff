@@ -50,11 +50,11 @@ RUN cd /tmp \
     && wget https://github.com/rr-debugger/rr/releases/download/5.9.0/rr-5.9.0-Linux-$(uname -m).deb \
     && dpkg -i rr-5.9.0-Linux-$(uname -m).deb
 
-ENV BOOT_JDK_VERSION=24
+ENV BOOT_JDK_VERSION=25
 ENV BOOT_JDK_DIR=/usr/lib/jvm/corretto-${BOOT_JDK_VERSION}
 
 RUN mkdir -p $BOOT_JDK_DIR \
-    && wget -qO- https://corretto.aws/downloads/latest/amazon-corretto-24-x64-linux-jdk.tar.gz \
+    && wget -qO- https://corretto.aws/downloads/latest/amazon-corretto-25-x64-linux-jdk.tar.gz \
     | tar xz --strip-components=1 -C $BOOT_JDK_DIR
 
 ENV JAVA_HOME=$BOOT_JDK_DIR
